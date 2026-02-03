@@ -88,6 +88,5 @@ The following endpoints are publicly accessible:
 
 - `POST /api/auth/signup`
 - `POST /api/auth/login`
-- `POST /api/auth/logout`
 
 All other endpoints require authentication.

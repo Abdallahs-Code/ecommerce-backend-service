@@ -3,9 +3,12 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.user import User
 from app.utils.auth import hash_password, verify_password, create_access_token
+from app.utils.dependencies import get_current_user
 from app.schemas.auth import SignupRequest, LoginRequest, AuthResponse
+import logging
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
+logger = logging.getLogger(__name__)
 
 def get_db():
     db = SessionLocal()
@@ -18,6 +21,7 @@ def get_db():
 def signup(user_data: SignupRequest, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
+        logger.warning(f"Signup failed - email already registered: {user_data.email}")
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = User(
@@ -28,12 +32,15 @@ def signup(user_data: SignupRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+    logger.info(f"User created successfully - ID: {user.id}, Email: {user.email}")
+
     return {"message": "User created"}
 
 @router.post("/login", response_model=AuthResponse)
 def login(response: Response, data: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == data.email).first()
     if not user or not verify_password(data.password, user.password):
+        logger.warning(f"Login failed - invalid credentials for email: {data.email}")
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
     token = create_access_token({"sub": str(user.id)})
@@ -42,9 +49,12 @@ def login(response: Response, data: LoginRequest, db: Session = Depends(get_db))
         value=token,
         httponly=True
     )
+    logger.info(f"User logged in successfully - ID: {user.id}, Email: {user.email}")
+
     return {"message": "Logged in"}
 
 @router.post("/logout", response_model=AuthResponse)
-def logout(response: Response):
+def logout(response: Response, current_user_id: int = Depends(get_current_user)):
+    logger.info(f"User logged out - ID: {current_user_id}")
     response.delete_cookie("access_token")
     return {"message": "Logged out"}
