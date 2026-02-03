@@ -1,0 +1,9 @@
+bcrypt==3.2.2
+fastapi
+pydantic[email]
+python-dotenv
+python-jose
+python-multipart
+passlib[bcrypt]
+sqlalchemy
+uvicorn
