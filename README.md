@@ -13,7 +13,7 @@ This project is a simple ecommerce backend built using FastAPI, SQLAlchemy, SQLi
 
 ```bash
 git clone https://github.com/Abdallahs-Code/ecommerce-backend-service.git
-cd EcommerceBackendService
+cd ecommerce-backend-service
 ```
 
 ### 2. Install dependencies
