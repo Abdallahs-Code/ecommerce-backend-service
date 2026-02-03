@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.cart import Cart
@@ -40,10 +40,22 @@ def delete_cart(current_user_id: int = Depends(get_current_user), db: Session = 
 
 
 @router.get("/items/{cart_id}", response_model=list[CartItemResponse])
-def get_cart_items(cart_id: int, db: Session = Depends(get_db)):
+def get_cart_items(
+    cart_id: int, 
+    db: Session = Depends(get_db),
+    skip: int = Query(0, ge=0, description="Number of items to skip"),
+    limit: int = Query(10, ge=1, le=50, description="Max items to return")
+):
     cart = db.query(Cart).filter(Cart.id == cart_id).first()
     if not cart:
         raise HTTPException(status_code=404, detail="Cart not found")
 
-    items = db.query(CartItem).filter(CartItem.cart_id == cart_id).all()
+    items = (
+        db.query(CartItem)
+        .filter(CartItem.cart_id == cart_id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    
     return items

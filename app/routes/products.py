@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.product import Product
@@ -28,8 +28,13 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     return new_product
 
 @router.get("/", response_model=list[ProductResponse])
-def get_products(db: Session = Depends(get_db)):
-    return db.query(Product).all()
+def get_products(
+    db: Session = Depends(get_db),
+    skip: int = Query(0, ge=0, description="Number of items to skip"),
+    limit: int = Query(10, ge=1, le=50, description="Maximum number of items to return"),
+):
+    products = db.query(Product).offset(skip).limit(limit).all()
+    return products
 
 @router.get("/{id}", response_model=ProductResponse)
 def get_product(id: int, db: Session = Depends(get_db)):
